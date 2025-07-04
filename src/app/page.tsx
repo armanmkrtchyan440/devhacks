@@ -20,7 +20,7 @@ interface AdviceProps {
 	advice_number: number
 }
 
-const Feeling_container: FC<TextProps> = ({ feeling, percent }) => {
+const FeelingItem: FC<TextProps> = ({ feeling, percent }) => {
 	return (
 		<div className='flex size-fit w-[90%] mb-[10px] m-auto justify-evenly mt-0'>
 			<p className='p-[10px] rounded-2xl bg-[#4188ff] text-center w-[54%] size-fit text-[#f2f2f2]'>
@@ -33,10 +33,10 @@ const Feeling_container: FC<TextProps> = ({ feeling, percent }) => {
 	)
 }
 
-const Advice_container: FC<AdviceProps> = ({ advice, advice_number }) => {
+const AdviceItem: FC<AdviceProps> = ({ advice, advice_number }) => {
 	return (
 		<div className='mb-[30px]'>
-			<h3 className='max-w-[80%] m-auto p-[10px] overflow-auto text-[#f2f2f2] '>
+			<h3 className='max-w-[80%] m-auto p-[10px] overflow-auto text-[#f2f2f2]'>
 				Advice №{advice_number}
 			</h3>
 			<p className='max-w-[80%] m-auto p-[10px] rounded-2xl overflow-auto text-[#f2f2f2] bg-[#4188ff] '>
@@ -46,8 +46,7 @@ const Advice_container: FC<AdviceProps> = ({ advice, advice_number }) => {
 	)
 }
 
-function loop_feeling_container() {
-	const items = []
+function FeelingContainer() {
 	const feelings = [
 		'Scared',
 		'Tired',
@@ -58,41 +57,37 @@ function loop_feeling_container() {
 		'Curious',
 	]
 
-	items.push(
-		<h2 className='mt-[10px] mb-[20px] p-[10px] text-center text-[#f2f2f2]'>
-			Analysis Based On Psychological Behaviour
-		</h2>
+	return (
+		<div className='h-[100%] overflow-auto remove-scrollbar'>
+			<h2 className='mt-[10px] mb-[20px] p-[10px] text-center text-[#f2f2f2]'>
+				Analysis Based On Psychological Behaviour
+			</h2>
+			{feelings.map((feeling, index) => (
+				<FeelingItem
+					key={index}
+					feeling={feeling}
+					percent={((index * 100) / 100) * 10}
+				/>
+			))}
+		</div>
 	)
-
-	for (let i = 0; i < feelings.length; i++) {
-		items.push(
-			<Feeling_container
-				feeling={feelings[i % feelings.length]}
-				percent={((i * 100) / 100) * 10}
-			/>
-		)
-	}
-	return <div className='h-[100%] overflow-auto remove-scrollbar'>{items}</div>
 }
 
-function loop_advice_component() {
-	const items = []
+interface AdviceContainerProps {
+	advices: string[]
+}
 
-	items.push(
-		<h2 className='mt-[10px] p-[10px] text-center text-[#f2f2f2]'>
-			Advices Based On Analysis
-		</h2>
+const AdviceContainer: FC<AdviceContainerProps> = ({ advices }) => {
+	return (
+		<div className='h-[100%] overflow-auto remove-scrollbar'>
+			<h2 className='mt-[10px] p-[10px] text-center text-[#f2f2f2]'>
+				Advices Based On Analysis
+			</h2>
+			{advices.map((advice, index) => (
+				<AdviceItem key={index} advice={advice} advice_number={index + 1} />
+			))}
+		</div>
 	)
-
-	for (let i = 0; i < 5; i++) {
-		items.push(
-			<Advice_container
-				advice='Lorem ipsum dolor sit amet consectetur adipisicing elit. Excepturi, inventore. Ea nulla nisi consequatur pariatur, debitis voluptatum quam rerum et aut odit reprehenderit blanditiis, quas suscipit? Iure repudiandae eius labore.'
-				advice_number={i + 1}
-			/>
-		)
-	}
-	return <div className='h-[100%] overflow-auto remove-scrollbar'>{items}</div>
 }
 
 export default function Home() {
@@ -135,10 +130,16 @@ export default function Home() {
 				</div>
 				<div className='flex-1 bg-[#accbff]'>
 					<div className='m-auto mt-[30px] w-[80%] h-[300px] rounded-[20px] bg-[#78aaff] p-[10px]'>
-						{loop_feeling_container()}
+						<FeelingContainer />
 					</div>
 					<div className='m-auto mt-[30px] w-[80%] h-[300px] rounded-[20px] bg-[#78aaff] p-[10px]'>
-						{loop_advice_component()}
+						<AdviceContainer
+							advices={[
+								'Stay positive',
+								'Keep learning',
+								'Practice mindfulness',
+							]}
+						/>
 					</div>
 				</div>
 			</div>
