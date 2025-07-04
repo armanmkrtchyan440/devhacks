@@ -1,64 +1,113 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Camera, Mic } from 'lucide-react'
-import { CameraTab } from './components/camera-tab'
-import { FC, useState } from 'react'
+import { FC, useState, useCallback } from 'react'
+
+import { CameraTab } from '../components/camera-tab'
+import { MicTab } from '@/components/mic-tab'
+
+type TabName = 'camera' | 'microphone'
 
 interface TextProps {
-	feeling: string;
-	percent: number;
+	feeling: string
+	percent: number
 }
 
 interface AdviceProps {
-	advice: string;
-	advice_number: number;
+	advice: string
+	advice_number: number
 }
 
 const Feeling_container: FC<TextProps> = ({ feeling, percent }) => {
-	return <div className='flex size-fit w-[90%] mb-[10px] m-auto justify-evenly mt-0'>
-		<p className='p-[10px] rounded-2xl bg-[#4188ff] text-center w-[54%] size-fit text-[#f2f2f2]'>{feeling}</p>
-		<p className='p-[10px] rounded-2xl bg-[#4188ff] text-center w-[30%] size-fit text-[#f2f2f2]'>{percent}%</p>
-	</div>
+	return (
+		<div className='flex size-fit w-[90%] mb-[10px] m-auto justify-evenly mt-0'>
+			<p className='p-[10px] rounded-2xl bg-[#4188ff] text-center w-[54%] size-fit text-[#f2f2f2]'>
+				{feeling}
+			</p>
+			<p className='p-[10px] rounded-2xl bg-[#4188ff] text-center w-[30%] size-fit text-[#f2f2f2]'>
+				{percent}%
+			</p>
+		</div>
+	)
 }
 
-const Advice_container: FC<AdviceProps> = ({advice, advice_number}) => {
-	return <div className='mb-[30px]'>
-		<h3 className='max-w-[80%] m-auto p-[10px] overflow-auto text-[#f2f2f2] '>Advice №{advice_number}</h3>
-		<p className='max-w-[80%] m-auto p-[10px] rounded-2xl overflow-auto text-[#f2f2f2] bg-[#4188ff] '>
-			{advice}</p>
-	</div>
-};
+const Advice_container: FC<AdviceProps> = ({ advice, advice_number }) => {
+	return (
+		<div className='mb-[30px]'>
+			<h3 className='max-w-[80%] m-auto p-[10px] overflow-auto text-[#f2f2f2] '>
+				Advice №{advice_number}
+			</h3>
+			<p className='max-w-[80%] m-auto p-[10px] rounded-2xl overflow-auto text-[#f2f2f2] bg-[#4188ff] '>
+				{advice}
+			</p>
+		</div>
+	)
+}
 
-function loop_feeling_container()
-{
-	const items = [];
-	const feelings = ["Scared", "Tired", "Happy", "Sad", "Anxious", "Bored", "Curious"];
+function loop_feeling_container() {
+	const items = []
+	const feelings = [
+		'Scared',
+		'Tired',
+		'Happy',
+		'Sad',
+		'Anxious',
+		'Bored',
+		'Curious',
+	]
 
-	items.push(<h2 className='mt-[10px] mb-[20px] p-[10px] text-center text-[#f2f2f2]'>Analysis Based On Psychological Behaviour</h2>);
+	items.push(
+		<h2 className='mt-[10px] mb-[20px] p-[10px] text-center text-[#f2f2f2]'>
+			Analysis Based On Psychological Behaviour
+		</h2>
+	)
 
 	for (let i = 0; i < feelings.length; i++) {
-		items.push(<Feeling_container feeling={feelings[i % feelings.length]} percent={(i * 100 / 100) * 10} />);
+		items.push(
+			<Feeling_container
+				feeling={feelings[i % feelings.length]}
+				percent={((i * 100) / 100) * 10}
+			/>
+		)
 	}
-	return <div className='h-[100%] overflow-auto remove-scrollbar'>{items}</div>;
+	return <div className='h-[100%] overflow-auto remove-scrollbar'>{items}</div>
 }
 
-function loop_advice_component()
-{
-	const items = [];
+function loop_advice_component() {
+	const items = []
 
-	items.push(<h2 className='mt-[10px] p-[10px] text-center text-[#f2f2f2]'>Advices Based On Analysis</h2>);
+	items.push(
+		<h2 className='mt-[10px] p-[10px] text-center text-[#f2f2f2]'>
+			Advices Based On Analysis
+		</h2>
+	)
 
 	for (let i = 0; i < 5; i++) {
-		items.push(<Advice_container advice='Lorem ipsum dolor sit amet consectetur adipisicing elit. Excepturi, inventore. Ea nulla nisi consequatur pariatur, debitis voluptatum quam rerum et aut odit reprehenderit blanditiis, quas suscipit? Iure repudiandae eius labore.' advice_number={i + 1} />);
+		items.push(
+			<Advice_container
+				advice='Lorem ipsum dolor sit amet consectetur adipisicing elit. Excepturi, inventore. Ea nulla nisi consequatur pariatur, debitis voluptatum quam rerum et aut odit reprehenderit blanditiis, quas suscipit? Iure repudiandae eius labore.'
+				advice_number={i + 1}
+			/>
+		)
 	}
-	return <div className='h-[100%] overflow-auto remove-scrollbar'>{items}</div>;
+	return <div className='h-[100%] overflow-auto remove-scrollbar'>{items}</div>
 }
 
-
 export default function Home() {
-	const [tab, setTab] = useState('camera')
+	const [tab, setTab] = useState<TabName>('camera')
+
+	const renderTabContent = useCallback(() => {
+		switch (tab) {
+			case 'camera':
+				return <CameraTab />
+			case 'microphone':
+				return <MicTab />
+			default:
+				return <CameraTab />
+		}
+	}, [tab])
 
 	return (
 		<main className='w-full h-screen overflow-hidden'>
@@ -68,7 +117,7 @@ export default function Home() {
 						defaultValue='camera'
 						className='flex flex-col justify-between items-center'
 						value={tab}
-						onValueChange={value => setTab(value)}
+						onValueChange={value => setTab(value as TabName)}
 					>
 						<TabsList className=''>
 							<TabsTrigger value='camera' className='cursor-pointer'>
@@ -78,11 +127,8 @@ export default function Home() {
 								<Mic className='h-16 w-16' />
 							</TabsTrigger>
 						</TabsList>
-						<TabsContent value='camera'>
-							{tab === 'camera' && <CameraTab />}
-						</TabsContent>
-						<TabsContent value='microphone'></TabsContent>
 					</Tabs>
+					<div>{renderTabContent()}</div>
 					<div>
 						<Button>Start recording</Button>
 					</div>
