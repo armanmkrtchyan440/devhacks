@@ -11,7 +11,9 @@ export const CameraTab: FC = () => {
 				video: {
 					width: { ideal: 1280 },
 					height: { ideal: 720 },
-					frameRate: { ideal: 30, max: 60 }, // 👈 improves smoothness
+					frameRate: { ideal: 30, max: 60 },
+					aspectRatio: { ideal: 16 / 9 },
+					facingMode: 'user',
 				},
 				audio: true,
 			})
@@ -46,7 +48,7 @@ export const CameraTab: FC = () => {
 				autoPlay
 				playsInline
 				muted
-				className='mt-4 w-80 h-60 bg-black rounded-lg shadow'
+				className='w-full h-full bg-black rounded-lg shadow aspect-video'
 			/>
 		</div>
 	)

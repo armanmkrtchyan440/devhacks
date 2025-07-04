@@ -1,14 +1,25 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Camera, Mic } from 'lucide-react'
 import { CameraTab } from './components/camera-tab'
 import { useState } from 'react'
 
-export default function Home() {
-	const [tab, setTab] = useState('camera')
+type TabName = 'camera' | 'microphone'
 
+const tabs: Record<TabName, { component: React.FC }> = {
+	camera: {
+		component: CameraTab,
+	},
+	microphone: {
+		component: () => <div>Microphone Tab</div>,
+	},
+}
+
+export default function Home() {
+	const [tab, setTab] = useState<TabName>('camera')
+	const SelectedTab = tabs[tab].component
 	return (
 		<main className='w-full h-screen overflow-hidden'>
 			<div className='flex w-full h-full'>
@@ -17,7 +28,7 @@ export default function Home() {
 						defaultValue='camera'
 						className='flex flex-col justify-between items-center'
 						value={tab}
-						onValueChange={value => setTab(value)}
+						onValueChange={value => setTab(value as TabName)}
 					>
 						<TabsList className=''>
 							<TabsTrigger value='camera' className='cursor-pointer'>
@@ -27,11 +38,8 @@ export default function Home() {
 								<Mic className='h-16 w-16' />
 							</TabsTrigger>
 						</TabsList>
-						<TabsContent value='camera'>
-							{tab === 'camera' && <CameraTab />}
-						</TabsContent>
-						<TabsContent value='microphone'></TabsContent>
 					</Tabs>
+					<div>{<SelectedTab />}</div>
 					<div>
 						<Button>Start recording</Button>
 					</div>
