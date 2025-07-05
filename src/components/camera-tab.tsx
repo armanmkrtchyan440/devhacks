@@ -116,7 +116,11 @@ export const CameraTab: FC = () => {
 			const context = canvas.getContext('2d')
 			if (!context) return
 
-			context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height)
+			context.save();
+			context.translate(canvas.width, 0);
+			context.scale(-1, 1);
+			context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+			context.restore();
 
 			const frameData = canvas.toDataURL('image/jpeg')
 			const base64Frame = frameData.split(',')[1]
@@ -126,7 +130,7 @@ export const CameraTab: FC = () => {
 					JSON.stringify({ type: 'video', data: base64Frame })
 				)
 			}
-		}, 100) // every 100ms
+		}, 100)
 	}
 
 	const startAudioStreaming = (stream: MediaStream) => {
@@ -139,7 +143,6 @@ export const CameraTab: FC = () => {
 				reader.onloadend = () => {
 					const base64Audio = (reader.result as string).split(',')[1]
 
-					// Send the base64 encoded audio data to the WebSocket server
 					if (socketRef.current?.readyState === WebSocket.OPEN) {
 						socketRef.current.send(
 							JSON.stringify({ type: 'audio', data: base64Audio })
@@ -158,7 +161,7 @@ export const CameraTab: FC = () => {
 			console.log('Audio recording stopped.')
 		}
 
-		recorder.start(2000) // Start recording in chunks of 2 seconds
+		recorder.start(2000);
 	}
 
 	return (
@@ -168,7 +171,7 @@ export const CameraTab: FC = () => {
 				autoPlay
 				playsInline
 				muted
-				className='w-full h-full bg-black rounded-lg shadow aspect-video'
+				className='w-full h-full bg-black rounded-lg shadow aspect-video transform scale-x-[-1]'
 			/>
 		</div>
 	)

@@ -45,24 +45,30 @@ export const MicTab: FC = () => {
 	}
 
 	return (
-		<div className='w-full flex flex-col items-center'>
-			<div className='w-full h-40' ref={containerRef}></div>
-			<div className='flex gap-4 mt-4'>
-				<button
-					onClick={startRecording}
-					disabled={recording}
-					className='bg-green-500 text-white px-4 py-2 rounded disabled:opacity-50'
-				>
-					Start Recording
-				</button>
-				<button
-					onClick={stopRecording}
-					disabled={!recording}
-					className='bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50'
-				>
-					Stop Recording
-				</button>
-			</div>
+		<div>
+			
 		</div>
 	)
+
+	// return (
+	// 	<div className='w-full flex flex-col items-center'>
+	// 		<div className='w-full h-40' ref={containerRef}></div>
+	// 		<div className='flex gap-4 mt-4'>
+	// 			<button
+	// 				onClick={startRecording}
+	// 				disabled={recording}
+	// 				className='bg-green-500 text-white px-4 py-2 rounded disabled:opacity-50'
+	// 			>
+	// 				Start Recording
+	// 			</button>
+	// 			<button
+	// 				onClick={stopRecording}
+	// 				disabled={!recording}
+	// 				className='bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50'
+	// 			>
+	// 				Stop Recording
+	// 			</button>
+	// 		</div>
+	// 	</div>
+	// )
 }
