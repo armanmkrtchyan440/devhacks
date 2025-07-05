@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Camera, Mic } from 'lucide-react'
 import { FC, useState, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
-import { CameraTab } from '@/components/camera-tab'
-import { MicTab } from '@/components/mic-tab'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { CameraTab } from '@/components/ai/camera-tab'
+import { MicTab } from '@/components/ai/mic-tab'
+import { useSearchParams } from 'next/navigation'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import {
 	Dialog,
@@ -21,6 +22,7 @@ import {
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { WebSocketProvider } from '@/providers/websocket'
+import { clsx } from 'clsx'
 
 type TabName = 'camera' | 'microphone'
 
@@ -111,14 +113,12 @@ const AdviceContainer: FC<AdviceContainerProps> = ({ advices }) => {
 }
 
 export default function Home() {
-	const router = useRouter()
 	const searchParams = useSearchParams()
 	const [tab, setTab] = useState<TabName>(
 		(searchParams.get('tab') as TabName) || 'camera'
 	)
 	const { setItem, getItem } = useLocalStorage<string>('isFirstStart')
-	const [isRecording, setIsRecording] = useState(false)
-	// Check if it's the first start
+
 	if (getItem() === undefined) {
 		setItem('true')
 	}
@@ -128,19 +128,27 @@ export default function Home() {
 	const renderTabContent = useCallback(() => {
 		switch (tab) {
 			case 'camera':
-				return <CameraTab isRecording={isRecording} />
+				return <CameraTab />
 			case 'microphone':
-				return <MicTab isRecording={isRecording} />
+				return <MicTab />
 			default:
-				return <CameraTab isRecording={isRecording} />
+				return <CameraTab />
 		}
-	}, [isRecording, tab])
+	}, [tab])
 
 	return (
 		<WebSocketProvider url={process.env.NEXT_PUBLIC_WEBSOCKET_URL || ''}>
 			<main className='w-full h-screen overflow-hidden'>
-				<div className='flex w-full h-full'>
-					<div className='flex-1 h-full border-r-[3px] border-r-[#9a9a9a] p-4 flex flex-col justify-between items-center '>
+				<div className='flex w-full h-full transition-all duration-300 ease-in-out'>
+					<div
+						className={clsx(
+							'w-full h-full border-r-[3px] border-r-[#9a9a9a] p-4 flex flex-col justify-between items-center transition-all duration-300 ease-in-out',
+							{
+								'max-w-full': tab === 'microphone',
+								'max-w-1/2': tab === 'camera',
+							}
+						)}
+					>
 						<Tabs
 							defaultValue='camera'
 							className='flex flex-col justify-between items-center w-full'
@@ -161,38 +169,35 @@ export default function Home() {
 								</TabsTrigger>
 							</TabsList>
 						</Tabs>
-						<div>{renderTabContent()}</div>
-						<div>
-							<Button
-								onClick={() => {
-									const isFirstStart = getItem()
-
-									if (isFirstStart === undefined || isFirstStart !== 'true') {
-										return setIsRecording(!isRecording)
-									}
-
-									setIsModalOpen(true)
-								}}
-								className={isRecording ? 'bg-red-500 hover:bg-red-800' : ''}
+						<AnimatePresence mode='wait'>
+							<motion.div
+								key={tab} // key must change to trigger animation
+								initial={{ opacity: 0 }}
+								animate={{ opacity: 1 }}
+								exit={{ opacity: 0 }}
+								transition={{ duration: 0.4 }}
+								className='w-full h-full'
 							>
-								{isRecording ? 'Stop' : ' Start'} recording
-							</Button>
-						</div>
+								{renderTabContent()}
+							</motion.div>
+						</AnimatePresence>
 					</div>
-					<div className='flex-1'>
-						<div className='m-auto mt-[30px] w-[80%] h-[300px] p-[10px] rounded-[20px] bg-[#cac1a1] shadow-lg'>
-							<FeelingContainer />
+					{tab === 'camera' && (
+						<div className='w-1/2'>
+							<div className='m-auto mt-[30px] w-[80%] h-[300px] p-[10px] rounded-[20px] bg-background shadow-sm border border-gray-300'>
+								<FeelingContainer />
+							</div>
+							<div className='m-auto mt-[30px] w-[80%] h-[300px] p-[10px] rounded-[20px] bg-background shadow-lg border border-gray-300'>
+								<AdviceContainer
+									advices={[
+										'Stay positive',
+										'Keep learning',
+										'Practice mindfulness',
+									]}
+								/>
+							</div>
 						</div>
-						<div className='m-auto mt-[30px] w-[80%] h-[300px] p-[10px] rounded-[20px] bg-[#cac1a1] shadow-lg'>
-							<AdviceContainer
-								advices={[
-									'Stay positive',
-									'Keep learning',
-									'Practice mindfulness',
-								]}
-							/>
-						</div>
-					</div>
+					)}
 				</div>
 				<Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
 					<DialogContent>
