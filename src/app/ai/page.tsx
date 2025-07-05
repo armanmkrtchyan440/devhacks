@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Camera, Mic } from 'lucide-react'
-import { FC, useState, useCallback } from 'react'
+import { FC, useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { CameraTab } from '@/components/ai/camera-tab'
@@ -31,84 +31,93 @@ interface TextProps {
 	percent: number
 }
 
-interface AdviceProps {
-	advice: string
-	advice_number: number
-}
-
+// FeelingItem component with hover animations and effects
 const FeelingItem: FC<TextProps> = ({ feeling, percent }) => {
+	const [loadingPercent, setLoadingPercent] = useState(0)
+
+	// Animation for loading percentage from 0 to actual value
+	useEffect(() => {
+		const interval = setInterval(() => {
+			setLoadingPercent(prev => {
+				const next = Math.min(prev + 1, percent)
+				if (next === percent) clearInterval(interval)
+				return next
+			})
+		}, 5) // Adjust the speed of the animation here (lower is faster)
+		return () => clearInterval(interval) // Cleanup interval when unmounted
+	}, [percent])
+
+	// Helper function to get the color of each feeling based on percentage
+	const getFeelingColor = (percent: number) => {
+		if (percent < 30) return '#e74c3c';  // Stress (Red)
+		if (percent < 50) return '#f39c12';  // Anxiety (Yellow)
+		if (percent < 70) return '#f39c12';  // Relaxation (Yellow)
+		if (percent < 90) return '#2ecc71';  // Happiness (Green)
+		return '#1abc9c';  // Euphoria (Teal)
+	}
+
 	return (
-		<div className='w-[80%] m-auto mb-[15px]'>
-			<div className='w-full flex justify-between items-center'>
+		<motion.div
+			className="w-[90%] m-auto mb-[20px] p-[15px] rounded-xl shadow-lg"
+			initial={{ opacity: 0 }}
+			animate={{ opacity: 1 }}
+			exit={{ opacity: 0 }}
+			transition={{ duration: 1 }}
+			style={{
+				boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+				border: '1px solid rgba(255, 255, 255, 0.3)'
+			}}
+			whileHover={{
+				scale: 1.05, // Scale the item slightly when hovered
+				boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)', // Increase shadow on hover
+				transition: { type: 'spring', stiffness: 300, damping: 20 }
+			}}
+		>
+			<div className='w-full flex justify-between items-center text-white font-medium text-lg'>
 				<p>{feeling}</p>
-				<p>{percent}%</p>
+				<p>{loadingPercent}%</p>
 			</div>
-			<div className='w-full h-2 rounded-full bg-gray-100 overflow-hidden'>
-				<div
-					className='bg-[#b0a27b] h-full'
+			<div className='w-full h-2 rounded-full bg-gray-500 overflow-hidden'>
+				<motion.div
+					className='h-full'
 					style={{
-						width: `${percent}%`,
+						width: `${loadingPercent}%`,
+						backgroundColor: getFeelingColor(loadingPercent),
+						borderRadius: '50px',
 					}}
-				></div>
+					animate={{ width: `${loadingPercent}%` }}
+					transition={{ duration: 2, ease: 'easeInOut' }}
+				></motion.div>
 			</div>
-		</div>
+		</motion.div>
 	)
 }
 
-const AdviceItem: FC<AdviceProps> = ({ advice, advice_number }) => {
-	return (
-		<div className='mb-[30px]'>
-			<h3 className='max-w-[80%] m-auto p-[10px] overflow-auto text-[#000]'>
-				Advice №{advice_number}
-			</h3>
-			<p className='max-w-[80%] m-auto p-[10px] rounded-2xl overflow-auto text-[#000] bg-[#b0a27b] '>
-				{advice}
-			</p>
-		</div>
-	)
-}
-
+// Updated FeelingContainer with no background
 function FeelingContainer() {
 	const feelings = [
-		'Scared',
-		'Tired',
-		'Happy',
-		'Sad',
-		'Anxious',
-		'Bored',
-		'Curious',
+		'Neutral',
+		'Stress',
+		'Anxiety',
+		'Relaxation',
+		'Sadness',
+		'Happiness',
+		'Euphoria',
+		'Depression',
+		'Anger',
+		'Scared'
 	]
 
 	return (
-		<div className='h-[100%] overflow-auto remove-scrollbar'>
-			<h2 className='mt-[10px] mb-[20px] p-[10px] text-center font-bold text-[#000]'>
-				Analysis Based On Psychological Behaviour
-			</h2>
+		<ScrollArea className='h-[100%] overflow-auto'>
 			{feelings.map((feeling, index) => (
 				<FeelingItem
 					key={index}
 					feeling={feeling}
-					percent={((index * 100) / 100) * 10}
+					percent={Math.min((index + 1) * 10, 100)} // Ensures max percent 100%
 				/>
 			))}
-		</div>
-	)
-}
-
-interface AdviceContainerProps {
-	advices: string[]
-}
-
-const AdviceContainer: FC<AdviceContainerProps> = ({ advices }) => {
-	return (
-		<div className='h-[100%] overflow-auto remove-scrollbar'>
-			<h2 className='mt-[10px] p-[10px] text-center font-bold text-[#000]'>
-				Advices Based On Analysis
-			</h2>
-			{advices.map((advice, index) => (
-				<AdviceItem key={index} advice={advice} advice_number={index + 1} />
-			))}
-		</div>
+		</ScrollArea>
 	)
 }
 
@@ -140,9 +149,10 @@ export default function Home() {
 		<WebSocketProvider url={process.env.NEXT_PUBLIC_WEBSOCKET_URL || ''}>
 			<main className='w-full h-screen overflow-hidden'>
 				<div className='flex w-full h-full transition-all duration-300 ease-in-out'>
+					{/* Left Side */}
 					<div
 						className={clsx(
-							'w-full h-full border-r-[3px] border-r-[#9a9a9a] p-4 flex flex-col justify-between items-center transition-all duration-300 ease-in-out',
+							'w-full h-full border-r-[3px] border-r-[#e0e0e0] p-4 flex flex-col justify-between items-center transition-all duration-300 ease-in-out',
 							{
 								'max-w-full': tab === 'microphone',
 								'max-w-1/2': tab === 'camera',
@@ -171,7 +181,7 @@ export default function Home() {
 						</Tabs>
 						<AnimatePresence mode='wait'>
 							<motion.div
-								key={tab} // key must change to trigger animation
+								key={tab}
 								initial={{ opacity: 0 }}
 								animate={{ opacity: 1 }}
 								exit={{ opacity: 0 }}
@@ -182,23 +192,17 @@ export default function Home() {
 							</motion.div>
 						</AnimatePresence>
 					</div>
+
+					{/* Right Side - Psychological Behaviour Analysis */}
 					{tab === 'camera' && (
-						<div className='w-1/2'>
-							<div className='m-auto mt-[30px] w-[80%] h-[300px] p-[10px] rounded-[20px] bg-background shadow-sm border border-gray-300'>
+						<div className='w-1/2 flex justify-center items-center h-full'>
+							<div className='w-[90%] max-w-[600px] p-[20px] bg-gradient-to-r rounded-[20px] shadow-lg border border-gray-500'>
 								<FeelingContainer />
-							</div>
-							<div className='m-auto mt-[30px] w-[80%] h-[300px] p-[10px] rounded-[20px] bg-background shadow-lg border border-gray-300'>
-								<AdviceContainer
-									advices={[
-										'Stay positive',
-										'Keep learning',
-										'Practice mindfulness',
-									]}
-								/>
 							</div>
 						</div>
 					)}
 				</div>
+
 				<Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
 					<DialogContent>
 						<DialogHeader>
@@ -207,147 +211,10 @@ export default function Home() {
 								Please read our terms and conditions before proceeding.
 							</DialogDescription>
 						</DialogHeader>
-						<div>
-							<div className='text-sm text-gray-700'>
-								By clicking {'"'}Proceed{'"'}, you agree to{' '}
-								<Dialog>
-									<DialogTrigger asChild>
-										<Button variant='link' className='p-0'>
-											our terms and conditions
-										</Button>
-									</DialogTrigger>
-									<DialogContent className='max-w-2xl max-h-[80vh]'>
-										<DialogHeader>
-											<DialogTitle>Terms and Conditions</DialogTitle>
-											<DialogDescription>
-												Last updated: October 1, 2023
-											</DialogDescription>
-										</DialogHeader>
-
-										<ScrollArea className='max-h-[60vh] pr-2'>
-											<div className='space-y-4 text-sm leading-relaxed'>
-												<p>
-													Welcome to <strong>Inq Ai</strong> (“we,” “our,” or
-													“us”). By accessing or using our website and related
-													services, including features that utilize your
-													<strong>
-														{' '}
-														camera and microphone for psychological analysis
-													</strong>
-													, you agree to be bound by these Terms.
-												</p>
-
-												<h3 className='font-semibold text-base'>
-													1. Acceptance of Terms
-												</h3>
-												<p>
-													By using our Services, you agree to comply with and be
-													legally bound by these Terms. If you disagree with any
-													part, please do not use our Services.
-												</p>
-
-												<h3 className='font-semibold text-base'>
-													2. Use of Camera and Microphone
-												</h3>
-												<ul className='list-disc ml-6 space-y-1'>
-													<li>
-														You explicitly consent to the use of your audio and
-														video for psychological analysis.
-													</li>
-													<li>
-														You confirm that you are 18 years or older (or have
-														legal consent if under 18).
-													</li>
-													<li>
-														You understand data may be processed by AI models or
-														professionals.
-													</li>
-												</ul>
-
-												<h3 className='font-semibold text-base'>
-													3. Data Collection and Privacy
-												</h3>
-												<p>
-													We collect video/audio recordings, facial expressions,
-													voice tone, and session metadata. This is handled
-													securely and in accordance with our Privacy Policy.
-												</p>
-												<p className='italic'>
-													We will never access or record your devices without
-													explicit permission.
-												</p>
-
-												<h3 className='font-semibold text-base'>
-													4. Storage and Retention
-												</h3>
-												<ul className='list-disc ml-6 space-y-1'>
-													<li>
-														Data may be stored securely for quality and service
-														improvements.
-													</li>
-													<li>
-														You can request data deletion anytime via [Insert
-														Email].
-													</li>
-													<li>We do not sell your data to third parties.</li>
-												</ul>
-
-												<h3 className='font-semibold text-base'>
-													5. Disclaimer
-												</h3>
-												<p>
-													Our tools are for self-improvement and wellness only.
-													They do not replace medical or psychological diagnosis
-													or treatment.
-												</p>
-
-												<h3 className='font-semibold text-base'>
-													6. User Conduct
-												</h3>
-												<ul className='list-disc ml-6 space-y-1'>
-													<li>No misuse or disruption of Services.</li>
-													<li>No impersonation or false information.</li>
-													<li>
-														Do not record or redistribute without consent.
-													</li>
-												</ul>
-
-												<h3 className='font-semibold text-base'>
-													7. Intellectual Property
-												</h3>
-												<p>
-													All content and tools on this site are owned by Inq AI
-													and may not be reused without permission.
-												</p>
-
-												<h3 className='font-semibold text-base'>8. Changes</h3>
-												<p>
-													We may update these Terms from time to time. Continued
-													use indicates acceptance of any changes.
-												</p>
-
-												<h3 className='font-semibold text-base'>9. Contact</h3>
-												<p>
-													Questions? Email us at <strong>support@inq.ai</strong>{' '}
-													or visit <strong>www.inq.ai</strong>.
-												</p>
-											</div>
-										</ScrollArea>
-
-										<DialogFooter>
-											<Button onClick={() => {}}>Close</Button>
-										</DialogFooter>
-									</DialogContent>
-								</Dialog>
-								. Please ensure you have read and understood them.
-							</div>
-						</div>
 						<DialogFooter>
 							<Button
 								variant='secondary'
-								onClick={() => {
-									setIsModalOpen(false)
-								}}
+								onClick={() => setIsModalOpen(false)}
 							>
 								Cancel
 							</Button>
