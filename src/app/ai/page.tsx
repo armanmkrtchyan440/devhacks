@@ -1,13 +1,15 @@
 'use client'
 
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Camera, Mic } from 'lucide-react'
 import { FC, useState, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
-import { CameraTab } from '../components/camera-tab'
-import { MicTab } from '@/components/mic-tab'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { CameraTab } from '@/components/ai/camera-tab'
+import { MicTab } from '@/components/ai/mic-tab'
+import { useSearchParams } from 'next/navigation'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import {
 	Dialog,
@@ -20,6 +22,7 @@ import {
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { WebSocketProvider } from '@/providers/websocket'
+import { clsx } from 'clsx'
 
 type TabName = 'camera' | 'microphone'
 
@@ -35,13 +38,19 @@ interface AdviceProps {
 
 const FeelingItem: FC<TextProps> = ({ feeling, percent }) => {
 	return (
-		<div className='flex size-fit w-[90%] mb-[10px] m-auto justify-evenly mt-0'>
-			<p className='p-[10px] rounded-2xl bg-[#4188ff] text-center w-[54%] size-fit text-[#f2f2f2]'>
-				{feeling}
-			</p>
-			<p className='p-[10px] rounded-2xl bg-[#4188ff] text-center w-[30%] size-fit text-[#f2f2f2]'>
-				{percent}%
-			</p>
+		<div className='w-[80%] m-auto mb-[15px]'>
+			<div className='w-full flex justify-between items-center'>
+				<p>{feeling}</p>
+				<p>{percent}%</p>
+			</div>
+			<div className='w-full h-2 rounded-full bg-gray-100 overflow-hidden'>
+				<div
+					className='bg-[#b0a27b] h-full'
+					style={{
+						width: `${percent}%`,
+					}}
+				></div>
+			</div>
 		</div>
 	)
 }
@@ -49,10 +58,10 @@ const FeelingItem: FC<TextProps> = ({ feeling, percent }) => {
 const AdviceItem: FC<AdviceProps> = ({ advice, advice_number }) => {
 	return (
 		<div className='mb-[30px]'>
-			<h3 className='max-w-[80%] m-auto p-[10px] overflow-auto text-[#f2f2f2]'>
+			<h3 className='max-w-[80%] m-auto p-[10px] overflow-auto text-[#000]'>
 				Advice №{advice_number}
 			</h3>
-			<p className='max-w-[80%] m-auto p-[10px] rounded-2xl overflow-auto text-[#f2f2f2] bg-[#4188ff] '>
+			<p className='max-w-[80%] m-auto p-[10px] rounded-2xl overflow-auto text-[#000] bg-[#b0a27b] '>
 				{advice}
 			</p>
 		</div>
@@ -72,7 +81,7 @@ function FeelingContainer() {
 
 	return (
 		<div className='h-[100%] overflow-auto remove-scrollbar'>
-			<h2 className='mt-[10px] mb-[20px] p-[10px] text-center text-[#f2f2f2]'>
+			<h2 className='mt-[10px] mb-[20px] p-[10px] text-center font-bold text-[#000]'>
 				Analysis Based On Psychological Behaviour
 			</h2>
 			{feelings.map((feeling, index) => (
@@ -93,7 +102,7 @@ interface AdviceContainerProps {
 const AdviceContainer: FC<AdviceContainerProps> = ({ advices }) => {
 	return (
 		<div className='h-[100%] overflow-auto remove-scrollbar'>
-			<h2 className='mt-[10px] p-[10px] text-center text-[#f2f2f2]'>
+			<h2 className='mt-[10px] p-[10px] text-center font-bold text-[#000]'>
 				Advices Based On Analysis
 			</h2>
 			{advices.map((advice, index) => (
@@ -104,14 +113,12 @@ const AdviceContainer: FC<AdviceContainerProps> = ({ advices }) => {
 }
 
 export default function Home() {
-	const router = useRouter()
 	const searchParams = useSearchParams()
 	const [tab, setTab] = useState<TabName>(
 		(searchParams.get('tab') as TabName) || 'camera'
 	)
 	const { setItem, getItem } = useLocalStorage<string>('isFirstStart')
-	const [isRecording, setIsRecording] = useState(false)
-	// Check if it's the first start
+
 	if (getItem() === undefined) {
 		setItem('true')
 	}
@@ -121,28 +128,38 @@ export default function Home() {
 	const renderTabContent = useCallback(() => {
 		switch (tab) {
 			case 'camera':
-				return <CameraTab isRecording={isRecording} />
+				return <CameraTab />
 			case 'microphone':
-				return <MicTab isRecording={isRecording} />
+				return <MicTab />
 			default:
-				return <CameraTab isRecording={isRecording} />
+				return <CameraTab />
 		}
-	}, [isRecording, tab])
+	}, [tab])
 
 	return (
 		<WebSocketProvider url={process.env.NEXT_PUBLIC_WEBSOCKET_URL || ''}>
 			<main className='w-full h-screen overflow-hidden'>
-				<div className='flex w-full h-full'>
-					<div className='flex-1 h-full border-r border-r-gray-400 p-4 flex flex-col justify-between items-center bg-[#accbff]'>
+				<div className='flex w-full h-full transition-all duration-300 ease-in-out'>
+					<div
+						className={clsx(
+							'w-full h-full border-r-[3px] border-r-[#9a9a9a] p-4 flex flex-col justify-between items-center transition-all duration-300 ease-in-out',
+							{
+								'max-w-full': tab === 'microphone',
+								'max-w-1/2': tab === 'camera',
+							}
+						)}
+					>
 						<Tabs
 							defaultValue='camera'
-							className='flex flex-col justify-between items-center'
+							className='flex flex-col justify-between items-center w-full'
 							value={tab}
-							onValueChange={value => {
-								setTab(value as TabName)
-								router.replace(`/?tab=${value}`, { scroll: false })
-							}}
+							onValueChange={value => setTab(value as TabName)}
 						>
+							<div className='w-full'>
+								<Button variant={'default'} asChild className='w-fit h-fit'>
+									<Link href='/'>Return to home page</Link>
+								</Button>
+							</div>
 							<TabsList className=''>
 								<TabsTrigger value='camera' className='cursor-pointer'>
 									<Camera className='h-16 w-16' />
@@ -152,38 +169,35 @@ export default function Home() {
 								</TabsTrigger>
 							</TabsList>
 						</Tabs>
-						<div className='w-full'>{renderTabContent()}</div>
-						<div>
-							<Button
-								onClick={() => {
-									const isFirstStart = getItem()
-
-									if (isFirstStart === undefined || isFirstStart !== 'true') {
-										return setIsRecording(!isRecording)
-									}
-
-									setIsModalOpen(true)
-								}}
-								className={isRecording ? 'bg-red-500 hover:bg-red-800' : ''}
+						<AnimatePresence mode='wait'>
+							<motion.div
+								key={tab} // key must change to trigger animation
+								initial={{ opacity: 0 }}
+								animate={{ opacity: 1 }}
+								exit={{ opacity: 0 }}
+								transition={{ duration: 0.4 }}
+								className='w-full h-full'
 							>
-								{isRecording ? 'Stop' : ' Start'} recording
-							</Button>
-						</div>
+								{renderTabContent()}
+							</motion.div>
+						</AnimatePresence>
 					</div>
-					<div className='flex-1 bg-[#accbff]'>
-						<div className='m-auto mt-[30px] w-[80%] h-[300px] rounded-[20px] bg-[#78aaff] p-[10px]'>
-							<FeelingContainer />
+					{tab === 'camera' && (
+						<div className='w-1/2'>
+							<div className='m-auto mt-[30px] w-[80%] h-[300px] p-[10px] rounded-[20px] bg-background shadow-sm border border-gray-300'>
+								<FeelingContainer />
+							</div>
+							<div className='m-auto mt-[30px] w-[80%] h-[300px] p-[10px] rounded-[20px] bg-background shadow-lg border border-gray-300'>
+								<AdviceContainer
+									advices={[
+										'Stay positive',
+										'Keep learning',
+										'Practice mindfulness',
+									]}
+								/>
+							</div>
 						</div>
-						<div className='m-auto mt-[30px] w-[80%] h-[300px] rounded-[20px] bg-[#78aaff] p-[10px]'>
-							<AdviceContainer
-								advices={[
-									'Stay positive',
-									'Keep learning',
-									'Practice mindfulness',
-								]}
-							/>
-						</div>
-					</div>
+					)}
 				</div>
 				<Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
 					<DialogContent>
