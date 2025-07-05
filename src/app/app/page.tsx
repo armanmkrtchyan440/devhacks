@@ -1,6 +1,6 @@
 'use client'
 
-import Link from "next/link";
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Camera, Mic } from 'lucide-react'
@@ -8,6 +8,19 @@ import { FC, useState, useCallback } from 'react'
 
 import { CameraTab } from '@/components/camera-tab'
 import { MicTab } from '@/components/mic-tab'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useLocalStorage } from '@/hooks/useLocalStorage'
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { WebSocketProvider } from '@/providers/websocket'
 
 type TabName = 'camera' | 'microphone'
 
@@ -29,9 +42,12 @@ const FeelingItem: FC<TextProps> = ({ feeling, percent }) => {
 				<p>{percent}%</p>
 			</div>
 			<div className='w-full h-2 rounded-full bg-gray-100 overflow-hidden'>
-				<div className='bg-[#b0a27b] h-full' style={{
-					width: `${percent}%`
-				}}></div>
+				<div
+					className='bg-[#b0a27b] h-full'
+					style={{
+						width: `${percent}%`,
+					}}
+				></div>
 			</div>
 		</div>
 	)
@@ -95,63 +111,253 @@ const AdviceContainer: FC<AdviceContainerProps> = ({ advices }) => {
 }
 
 export default function Home() {
-	const [tab, setTab] = useState<TabName>('camera')
+	const router = useRouter()
+	const searchParams = useSearchParams()
+	const [tab, setTab] = useState<TabName>(
+		(searchParams.get('tab') as TabName) || 'camera'
+	)
+	const { setItem, getItem } = useLocalStorage<string>('isFirstStart')
+	const [isRecording, setIsRecording] = useState(false)
+	// Check if it's the first start
+	if (getItem() === undefined) {
+		setItem('true')
+	}
+
+	const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
 
 	const renderTabContent = useCallback(() => {
 		switch (tab) {
 			case 'camera':
-				return <CameraTab />
+				return <CameraTab isRecording={isRecording} />
 			case 'microphone':
-				return <MicTab />
+				return <MicTab isRecording={isRecording} />
 			default:
-				return <CameraTab />
+				return <CameraTab isRecording={isRecording} />
 		}
-	}, [tab])
+	}, [isRecording, tab])
 
 	return (
-		<main className='w-full h-screen overflow-hidden'>
-			<div className='flex w-full h-full'>
-				<div className='flex-1 h-full border-r-[3px] border-r-[#9a9a9a] p-4 flex flex-col justify-between items-center '>
-					<Tabs
-						defaultValue='camera'
-						className='flex flex-col justify-between items-center w-full'
-						value={tab}
-						onValueChange={value => setTab(value as TabName)}
-					>
-						<div className="w-full">
-							<Button variant={"default"} asChild className='w-fit h-fit'>
-								<Link href="/">Return to home page</Link>
+		<WebSocketProvider url={process.env.NEXT_PUBLIC_WEBSOCKET_URL || ''}>
+			<main className='w-full h-screen overflow-hidden'>
+				<div className='flex w-full h-full'>
+					<div className='flex-1 h-full border-r-[3px] border-r-[#9a9a9a] p-4 flex flex-col justify-between items-center '>
+						<Tabs
+							defaultValue='camera'
+							className='flex flex-col justify-between items-center w-full'
+							value={tab}
+							onValueChange={value => setTab(value as TabName)}
+						>
+							<div className='w-full'>
+								<Button variant={'default'} asChild className='w-fit h-fit'>
+									<Link href='/'>Return to home page</Link>
+								</Button>
+							</div>
+							<TabsList className=''>
+								<TabsTrigger value='camera' className='cursor-pointer'>
+									<Camera className='h-16 w-16' />
+								</TabsTrigger>
+								<TabsTrigger value='microphone' className='cursor-pointer'>
+									<Mic className='h-16 w-16' />
+								</TabsTrigger>
+							</TabsList>
+						</Tabs>
+						<div>{renderTabContent()}</div>
+						<div>
+							<Button
+								onClick={() => {
+									const isFirstStart = getItem()
+
+									if (isFirstStart === undefined || isFirstStart !== 'true') {
+										return setIsRecording(!isRecording)
+									}
+
+									setIsModalOpen(true)
+								}}
+								className={isRecording ? 'bg-red-500 hover:bg-red-800' : ''}
+							>
+								{isRecording ? 'Stop' : ' Start'} recording
 							</Button>
 						</div>
-						<TabsList className=''>
-							<TabsTrigger value='camera' className='cursor-pointer'>
-								<Camera className='h-16 w-16' />
-							</TabsTrigger>
-							<TabsTrigger value='microphone' className='cursor-pointer'>
-								<Mic className='h-16 w-16' />
-							</TabsTrigger>
-						</TabsList>
-					</Tabs>
-					<div>{renderTabContent()}</div>
-					<div>
-						<Button>Start recording</Button>
+					</div>
+					<div className='flex-1'>
+						<div className='m-auto mt-[30px] w-[80%] h-[300px] p-[10px] rounded-[20px] bg-[#cac1a1] shadow-lg'>
+							<FeelingContainer />
+						</div>
+						<div className='m-auto mt-[30px] w-[80%] h-[300px] p-[10px] rounded-[20px] bg-[#cac1a1] shadow-lg'>
+							<AdviceContainer
+								advices={[
+									'Stay positive',
+									'Keep learning',
+									'Practice mindfulness',
+								]}
+							/>
+						</div>
 					</div>
 				</div>
-				<div className='flex-1'>
-					<div className='m-auto mt-[30px] w-[80%] h-[300px] p-[10px] rounded-[20px] bg-[#cac1a1] shadow-lg'>
-						<FeelingContainer />
-					</div>
-					<div className='m-auto mt-[30px] w-[80%] h-[300px] p-[10px] rounded-[20px] bg-[#cac1a1] shadow-lg'>
-						<AdviceContainer
-							advices={[
-								'Stay positive',
-								'Keep learning',
-								'Practice mindfulness',
-							]}
-						/>
-					</div>
-				</div>
-			</div>
-		</main>
+				<Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>Confirm Action</DialogTitle>
+							<DialogDescription>
+								Please read our terms and conditions before proceeding.
+							</DialogDescription>
+						</DialogHeader>
+						<div>
+							<div className='text-sm text-gray-700'>
+								By clicking {'"'}Proceed{'"'}, you agree to{' '}
+								<Dialog>
+									<DialogTrigger asChild>
+										<Button variant='link' className='p-0'>
+											our terms and conditions
+										</Button>
+									</DialogTrigger>
+									<DialogContent className='max-w-2xl max-h-[80vh]'>
+										<DialogHeader>
+											<DialogTitle>Terms and Conditions</DialogTitle>
+											<DialogDescription>
+												Last updated: October 1, 2023
+											</DialogDescription>
+										</DialogHeader>
+
+										<ScrollArea className='max-h-[60vh] pr-2'>
+											<div className='space-y-4 text-sm leading-relaxed'>
+												<p>
+													Welcome to <strong>Inq Ai</strong> (“we,” “our,” or
+													“us”). By accessing or using our website and related
+													services, including features that utilize your
+													<strong>
+														{' '}
+														camera and microphone for psychological analysis
+													</strong>
+													, you agree to be bound by these Terms.
+												</p>
+
+												<h3 className='font-semibold text-base'>
+													1. Acceptance of Terms
+												</h3>
+												<p>
+													By using our Services, you agree to comply with and be
+													legally bound by these Terms. If you disagree with any
+													part, please do not use our Services.
+												</p>
+
+												<h3 className='font-semibold text-base'>
+													2. Use of Camera and Microphone
+												</h3>
+												<ul className='list-disc ml-6 space-y-1'>
+													<li>
+														You explicitly consent to the use of your audio and
+														video for psychological analysis.
+													</li>
+													<li>
+														You confirm that you are 18 years or older (or have
+														legal consent if under 18).
+													</li>
+													<li>
+														You understand data may be processed by AI models or
+														professionals.
+													</li>
+												</ul>
+
+												<h3 className='font-semibold text-base'>
+													3. Data Collection and Privacy
+												</h3>
+												<p>
+													We collect video/audio recordings, facial expressions,
+													voice tone, and session metadata. This is handled
+													securely and in accordance with our Privacy Policy.
+												</p>
+												<p className='italic'>
+													We will never access or record your devices without
+													explicit permission.
+												</p>
+
+												<h3 className='font-semibold text-base'>
+													4. Storage and Retention
+												</h3>
+												<ul className='list-disc ml-6 space-y-1'>
+													<li>
+														Data may be stored securely for quality and service
+														improvements.
+													</li>
+													<li>
+														You can request data deletion anytime via [Insert
+														Email].
+													</li>
+													<li>We do not sell your data to third parties.</li>
+												</ul>
+
+												<h3 className='font-semibold text-base'>
+													5. Disclaimer
+												</h3>
+												<p>
+													Our tools are for self-improvement and wellness only.
+													They do not replace medical or psychological diagnosis
+													or treatment.
+												</p>
+
+												<h3 className='font-semibold text-base'>
+													6. User Conduct
+												</h3>
+												<ul className='list-disc ml-6 space-y-1'>
+													<li>No misuse or disruption of Services.</li>
+													<li>No impersonation or false information.</li>
+													<li>
+														Do not record or redistribute without consent.
+													</li>
+												</ul>
+
+												<h3 className='font-semibold text-base'>
+													7. Intellectual Property
+												</h3>
+												<p>
+													All content and tools on this site are owned by Inq AI
+													and may not be reused without permission.
+												</p>
+
+												<h3 className='font-semibold text-base'>8. Changes</h3>
+												<p>
+													We may update these Terms from time to time. Continued
+													use indicates acceptance of any changes.
+												</p>
+
+												<h3 className='font-semibold text-base'>9. Contact</h3>
+												<p>
+													Questions? Email us at <strong>support@inq.ai</strong>{' '}
+													or visit <strong>www.inq.ai</strong>.
+												</p>
+											</div>
+										</ScrollArea>
+
+										<DialogFooter>
+											<Button onClick={() => {}}>Close</Button>
+										</DialogFooter>
+									</DialogContent>
+								</Dialog>
+								. Please ensure you have read and understood them.
+							</div>
+						</div>
+						<DialogFooter>
+							<Button
+								variant='secondary'
+								onClick={() => {
+									setIsModalOpen(false)
+								}}
+							>
+								Cancel
+							</Button>
+							<Button
+								onClick={() => {
+									setItem('false')
+									setIsModalOpen(false)
+								}}
+							>
+								Proceed
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
+			</main>
+		</WebSocketProvider>
 	)
 }

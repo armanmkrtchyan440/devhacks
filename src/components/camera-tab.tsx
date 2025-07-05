@@ -1,38 +1,77 @@
 'use client'
 
-import { FC, useEffect, useRef } from 'react'
+import { useWebSocket } from '@/providers/websocket'
+import { FC, useCallback, useEffect, useRef } from 'react'
 
-export const CameraTab: FC = () => {
+interface CameraTabProps {
+	isRecording: boolean
+}
+
+export const CameraTab: FC<CameraTabProps> = ({ isRecording }) => {
 	const videoRef = useRef<HTMLVideoElement | null>(null)
 	const activeStreamsRef = useRef<MediaStream[]>([])
-	const socketRef = useRef<WebSocket | null>(null)
 	const canvasRef = useRef<HTMLCanvasElement | null>(null)
 	const intervalRef = useRef<NodeJS.Timeout | null>(null)
 	const audioRecorderRef = useRef<MediaRecorder | null>(null)
 
+	const { sendMessage } = useWebSocket()
+
+	const startFrameSending = useCallback(() => {
+		intervalRef.current = setInterval(() => {
+			if (
+				!videoRef.current ||
+				videoRef.current.readyState !== HTMLMediaElement.HAVE_ENOUGH_DATA
+			)
+				return
+
+			const canvas =
+				canvasRef.current ||
+				(canvasRef.current = document.createElement('canvas'))
+
+			canvas.width = videoRef.current.videoWidth
+			canvas.height = videoRef.current.videoHeight
+
+			const context = canvas.getContext('2d')
+			if (!context) return
+
+			context.save()
+			context.translate(canvas.width, 0)
+			context.scale(-1, 1)
+			context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height)
+			context.restore()
+
+			const frameData = canvas.toDataURL('image/jpeg')
+			const base64Frame = frameData.split(',')[1]
+
+			sendMessage({ type: 'video', data: base64Frame })
+		}, 100)
+	}, [sendMessage])
+
+	const startAudioStreaming = useCallback(
+		(stream: MediaStream) => {
+			const recorder = new MediaRecorder(stream)
+			audioRecorderRef.current = recorder
+
+			recorder.ondataavailable = event => {
+				if (event.data && event.data.size > 0) {
+					const reader = new FileReader()
+					reader.onloadend = () => {
+						const base64Audio = (reader.result as string).split(',')[1]
+						sendMessage({ type: 'audio', data: base64Audio })
+					}
+					reader.readAsDataURL(event.data)
+				}
+			}
+
+			recorder.start(2000)
+		},
+		[sendMessage]
+	)
+
 	useEffect(() => {
-		// 1. Open WebSocket connection
-		const socket = new WebSocket('ws://69.197.148.164:8765')
-		socketRef.current = socket
+		if (!isRecording) return
 
-		socket.onopen = () => {
-			console.log('WebSocket connected.')
-		}
-
-		socket.onmessage = event => {
-			// Handle incoming messages if needed
-			console.log(event)
-		}
-
-		socket.onerror = error => {
-			console.error('WebSocket error:', error)
-		}
-
-		socket.onclose = () => {
-			console.log('WebSocket closed.')
-		}
-
-		// 2. Get camera stream
+		// 1. Get camera stream
 		navigator.mediaDevices
 			.getUserMedia({
 				video: {
@@ -52,7 +91,6 @@ export const CameraTab: FC = () => {
 					videoRef.current.play()
 				}
 
-				// 3. Start frame sending loop
 				startFrameSending()
 			})
 			.catch(err => {
@@ -60,34 +98,23 @@ export const CameraTab: FC = () => {
 			})
 
 		navigator.mediaDevices
-			.getUserMedia({
-				audio: true, // Enable audio
-			})
+			.getUserMedia({ audio: true })
 			.then(mediaStream => {
 				activeStreamsRef.current.push(mediaStream)
 				startAudioStreaming(mediaStream)
 			})
 			.catch(err => {
-				console.error('Error accessing media devices:', err)
+				console.error('Error accessing audio:', err)
 			})
 
-		// Cleanup on unmount
+		// Cleanup
 		return () => {
-			// Stop webcam
 			activeStreamsRef.current.forEach(stream =>
 				stream.getTracks().forEach(track => track.stop())
 			)
 			activeStreamsRef.current = []
 
-			// Close WebSocket
-			if (socketRef.current) {
-				console.log('Closing WebSocket connection.')
-				socketRef.current.close()
-			}
-
-			// Clear frame sending interval
 			if (intervalRef.current) {
-				console.log('Clearing frame sending interval.')
 				clearInterval(intervalRef.current)
 			}
 
@@ -95,83 +122,16 @@ export const CameraTab: FC = () => {
 				audioRecorderRef?.current?.stop()
 			}
 		}
-	}, [])
-
-	// Frame sending logic
-	const startFrameSending = () => {
-		intervalRef.current = setInterval(() => {
-			if (
-				!videoRef.current ||
-				videoRef.current.readyState !== HTMLMediaElement.HAVE_ENOUGH_DATA
-			)
-				return
-
-			const canvas =
-				canvasRef.current ||
-				(canvasRef.current = document.createElement('canvas'))
-
-			canvas.width = videoRef.current.videoWidth
-			canvas.height = videoRef.current.videoHeight
-
-			const context = canvas.getContext('2d')
-			if (!context) return
-
-			context.save();
-			context.translate(canvas.width, 0);
-			context.scale(-1, 1);
-			context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-			context.restore();
-
-			const frameData = canvas.toDataURL('image/jpeg')
-			const base64Frame = frameData.split(',')[1]
-
-			if (socketRef.current?.readyState === WebSocket.OPEN) {
-				socketRef.current.send(
-					JSON.stringify({ type: 'video', data: base64Frame })
-				)
-			}
-		}, 100)
-	}
-
-	const startAudioStreaming = (stream: MediaStream) => {
-		const recorder = new MediaRecorder(stream)
-		audioRecorderRef.current = recorder
-
-		recorder.ondataavailable = event => {
-			if (event.data && event.data.size > 0) {
-				const reader = new FileReader()
-				reader.onloadend = () => {
-					const base64Audio = (reader.result as string).split(',')[1]
-
-					if (socketRef.current?.readyState === WebSocket.OPEN) {
-						socketRef.current.send(
-							JSON.stringify({ type: 'audio', data: base64Audio })
-						)
-					}
-				}
-				reader.readAsDataURL(event.data)
-			}
-		}
-
-		recorder.onstart = () => {
-			console.log('Audio recording started.')
-		}
-
-		recorder.onstop = () => {
-			console.log('Audio recording stopped.')
-		}
-
-		recorder.start(2000);
-	}
+	}, [isRecording, startAudioStreaming, startFrameSending])
 
 	return (
-		<div>
+		<div className='w-full'>
 			<video
 				ref={videoRef}
 				autoPlay
 				playsInline
 				muted
-				className='w-full h-full bg-black rounded-lg shadow aspect-video transform scale-x-[-1]'
+				className='w-full h-full bg-black rounded-lg shadow aspect-video scale-x-[-1] transform'
 			/>
 		</div>
 	)
