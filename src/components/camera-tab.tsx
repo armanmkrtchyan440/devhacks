@@ -1,7 +1,7 @@
 'use client'
 
+import { useWebSocket } from '@/providers/websocket'
 import { FC, useCallback, useEffect, useRef } from 'react'
-import { useWebSocket } from '../hooks/useWebSocket'
 
 interface CameraTabProps {
 	isRecording: boolean
@@ -14,10 +14,7 @@ export const CameraTab: FC<CameraTabProps> = ({ isRecording }) => {
 	const intervalRef = useRef<NodeJS.Timeout | null>(null)
 	const audioRecorderRef = useRef<MediaRecorder | null>(null)
 
-	const { sendMessage } = useWebSocket(
-		process.env.WEBSOCKET_URL || '',
-		isRecording
-	)
+	const { sendMessage } = useWebSocket()
 
 	const startFrameSending = useCallback(() => {
 		intervalRef.current = setInterval(() => {
