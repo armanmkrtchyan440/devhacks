@@ -40,10 +40,10 @@ const FeelingItem: FC<TextProps> = ({ feeling, percent }) => {
 const AdviceItem: FC<AdviceProps> = ({ advice, advice_number }) => {
 	return (
 		<div className='mb-[30px]'>
-			<h3 className='max-w-[80%] m-auto p-[10px] overflow-auto text-[#f2f2f2]'>
+			<h3 className='max-w-[80%] m-auto p-[10px] overflow-auto text-[#000]'>
 				Advice №{advice_number}
 			</h3>
-			<p className='max-w-[80%] m-auto p-[10px] rounded-2xl overflow-auto text-[#f2f2f2] bg-[#b0a27b] '>
+			<p className='max-w-[80%] m-auto p-[10px] rounded-2xl overflow-auto text-[#000] bg-[#b0a27b] '>
 				{advice}
 			</p>
 		</div>
@@ -63,7 +63,7 @@ function FeelingContainer() {
 
 	return (
 		<div className='h-[100%] overflow-auto remove-scrollbar'>
-			<h2 className='mt-[10px] mb-[20px] p-[10px] text-center font-bold text-[#f2f2f2]'>
+			<h2 className='mt-[10px] mb-[20px] p-[10px] text-center font-bold text-[#000]'>
 				Analysis Based On Psychological Behaviour
 			</h2>
 			{feelings.map((feeling, index) => (
@@ -84,7 +84,7 @@ interface AdviceContainerProps {
 const AdviceContainer: FC<AdviceContainerProps> = ({ advices }) => {
 	return (
 		<div className='h-[100%] overflow-auto remove-scrollbar'>
-			<h2 className='mt-[10px] p-[10px] text-center font-bold text-[#f2f2f2]'>
+			<h2 className='mt-[10px] p-[10px] text-center font-bold text-[#000]'>
 				Advices Based On Analysis
 			</h2>
 			{advices.map((advice, index) => (
@@ -111,7 +111,7 @@ export default function Home() {
 	return (
 		<main className='w-full h-screen overflow-hidden'>
 			<div className='flex w-full h-full'>
-				<div className='flex-1 h-full border-r-[3px] border-r-[#9a9a9a] p-4 flex flex-col justify-between items-center bg-[#dbd1be]'>
+				<div className='flex-1 h-full border-r-[3px] border-r-[#9a9a9a] p-4 flex flex-col justify-between items-center '>
 					<Tabs
 						defaultValue='camera'
 						className='flex flex-col justify-between items-center w-full'
@@ -137,7 +137,7 @@ export default function Home() {
 						<Button>Start recording</Button>
 					</div>
 				</div>
-				<div className='flex-1 bg-[#dbd1be] '>
+				<div className='flex-1'>
 					<div className='m-auto mt-[30px] w-[80%] h-[300px] p-[10px] rounded-[20px] bg-[#cac1a1] shadow-lg'>
 						<FeelingContainer />
 					</div>
