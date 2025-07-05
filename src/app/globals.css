@@ -117,7 +117,13 @@
 		@apply border-border outline-ring/50;
 	}
 	body {
-		@apply bg-background text-foreground;
+		@apply text-foreground;
+		background: radial-gradient(
+			circle at center,
+			#0a0a23 0%,
+			#1a1a3e 50%,
+			#2d1b69 100%
+		);
 	}
 }
 .remove-scrollbar::-webkit-scrollbar {
@@ -459,6 +465,19 @@
 	}
 	100% {
 		transform: translate(-50%, -50%) scale(2);
+		opacity: 0;
+	}
+}
+
+@keyframes voiceWaveExpand {
+	0% {
+		width: 200px;
+		height: 200px;
+		opacity: 1;
+	}
+	100% {
+		width: 500px;
+		height: 500px;
 		opacity: 0;
 	}
 }
