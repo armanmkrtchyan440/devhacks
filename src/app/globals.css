@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-@import "tw-animate-css";
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -113,13 +113,395 @@
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+	* {
+		@apply border-border outline-ring/50;
 	}
-  body {
-    @apply bg-background text-foreground;
+	body {
+		@apply bg-background text-foreground;
 	}
 }
-.remove-scrollbar::-webkit-scrollbar{
+.remove-scrollbar::-webkit-scrollbar {
 	width: 0;
+}
+
+.sphere-container {
+	position: relative;
+	width: 300px;
+	height: 300px;
+	margin: 50px 0;
+	perspective: 1000px;
+}
+
+.sphere {
+	width: 100%;
+	height: 100%;
+	position: relative;
+	transform-style: preserve-3d;
+	cursor: pointer;
+	transition: all 0.3s ease;
+}
+
+.sphere:hover {
+	transform: scale(1.05);
+}
+
+.sphere-core {
+	position: absolute;
+	width: 200px;
+	height: 200px;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	background: radial-gradient(
+			circle at 30% 30%,
+			rgba(255, 255, 255, 0.3) 0%,
+			transparent 50%
+		),
+		radial-gradient(
+			circle at center,
+			rgba(30, 144, 255, 0.8) 0%,
+			rgba(0, 100, 200, 0.6) 50%,
+			transparent 100%
+		);
+	border-radius: 50%;
+	box-shadow: 0 0 60px rgba(30, 144, 255, 0.8),
+		0 0 120px rgba(30, 144, 255, 0.6), inset 0 0 30px rgba(255, 255, 255, 0.1);
+	animation: coreFloat 4s ease-in-out infinite;
+}
+
+.sphere.active .sphere-core {
+	background: radial-gradient(
+			circle at 30% 30%,
+			rgba(255, 255, 255, 0.4) 0%,
+			transparent 50%
+		),
+		radial-gradient(
+			circle at center,
+			rgba(0, 191, 255, 0.9) 0%,
+			rgba(0, 150, 255, 0.7) 50%,
+			transparent 100%
+		);
+	box-shadow: 0 0 80px rgba(0, 191, 255, 1), 0 0 160px rgba(0, 191, 255, 0.8),
+		inset 0 0 40px rgba(255, 255, 255, 0.2);
+}
+
+.energy-rings {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	left: 0;
+	top: 0;
+}
+
+.energy-ring {
+	position: absolute;
+	border: 2px solid rgba(30, 144, 255, 0.6);
+	border-radius: 50%;
+	animation: energyRingRotate 3s linear infinite;
+}
+
+.energy-ring:nth-child(1) {
+	width: 250px;
+	height: 250px;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%) rotateX(0deg);
+	animation-duration: 8s;
+}
+
+.energy-ring:nth-child(2) {
+	width: 280px;
+	height: 280px;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%) rotateX(60deg);
+	animation-duration: 10s;
+	animation-direction: reverse;
+}
+
+.energy-ring:nth-child(3) {
+	width: 320px;
+	height: 320px;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%) rotateX(120deg);
+	animation-duration: 12s;
+}
+
+.particle-field {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	border-radius: 50%;
+	overflow: hidden;
+}
+
+.particle {
+	position: absolute;
+	width: 3px;
+	height: 3px;
+	background: rgba(255, 255, 255, 0.9);
+	border-radius: 50%;
+	box-shadow: 0 0 10px rgba(30, 144, 255, 0.8);
+	animation: particleFlow 6s ease-in-out infinite;
+}
+
+.particle:nth-child(1) {
+	left: 10%;
+	top: 20%;
+	animation-delay: 0s;
+	animation-duration: 5s;
+}
+
+.particle:nth-child(2) {
+	left: 80%;
+	top: 30%;
+	animation-delay: 1s;
+	animation-duration: 7s;
+}
+
+.particle:nth-child(3) {
+	left: 60%;
+	top: 70%;
+	animation-delay: 2s;
+	animation-duration: 6s;
+}
+
+.particle:nth-child(4) {
+	left: 20%;
+	top: 80%;
+	animation-delay: 3s;
+	animation-duration: 8s;
+}
+
+.particle:nth-child(5) {
+	left: 90%;
+	top: 60%;
+	animation-delay: 4s;
+	animation-duration: 5.5s;
+}
+
+.particle:nth-child(6) {
+	left: 40%;
+	top: 10%;
+	animation-delay: 0.5s;
+	animation-duration: 6.5s;
+}
+
+.particle:nth-child(7) {
+	left: 70%;
+	top: 90%;
+	animation-delay: 1.5s;
+	animation-duration: 7.5s;
+}
+
+.particle:nth-child(8) {
+	left: 15%;
+	top: 50%;
+	animation-delay: 2.5s;
+	animation-duration: 4.5s;
+}
+
+.energy-waves {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+}
+
+.energy-wave {
+	position: absolute;
+	border: 1px solid rgba(30, 144, 255, 0.4);
+	border-radius: 50%;
+	animation: energyWaveExpand 4s ease-out infinite;
+}
+
+.energy-wave:nth-child(1) {
+	width: 200px;
+	height: 200px;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	animation-delay: 0s;
+}
+
+.energy-wave:nth-child(2) {
+	width: 200px;
+	height: 200px;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	animation-delay: 1s;
+}
+
+.energy-wave:nth-child(3) {
+	width: 200px;
+	height: 200px;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	animation-delay: 2s;
+}
+
+.energy-wave:nth-child(4) {
+	width: 200px;
+	height: 200px;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	animation-delay: 3s;
+}
+
+.voice-waves {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 0.3s ease;
+}
+
+.voice-waves.active {
+	opacity: 1;
+}
+
+.voice-wave {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	border: 3px solid rgba(0, 191, 255, 0.8);
+	border-radius: 50%;
+	transform: translate(-50%, -50%) scale(0);
+	opacity: 0;
+	/* Smoothly transition between states set by JavaScript */
+	transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+}
+
+.voice-wave:nth-child(1) {
+	animation-delay: 0s;
+}
+
+.voice-wave:nth-child(2) {
+	animation-delay: 0.2s;
+}
+
+.voice-wave:nth-child(3) {
+	animation-delay: 0.4s;
+}
+
+.voice-wave:nth-child(4) {
+	animation-delay: 0.6s;
+}
+
+@keyframes fadeInUp {
+	from {
+		opacity: 0;
+		transform: translateY(30px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes coreFloat {
+	0%,
+	100% {
+		transform: translate(-50%, -50%) scale(1);
+	}
+	50% {
+		transform: translate(-50%, -50%) scale(1.1);
+	}
+}
+
+@keyframes energyRingRotate {
+	0% {
+		transform: translate(-50%, -50%) rotateX(var(--rotation, 0deg))
+			rotateY(0deg);
+	}
+	100% {
+		transform: translate(-50%, -50%) rotateX(var(--rotation, 0deg))
+			rotateY(360deg);
+	}
+}
+
+@keyframes particleFlow {
+	0% {
+		transform: translate(0, 0) scale(0.5);
+		opacity: 0;
+	}
+	20% {
+		opacity: 1;
+	}
+	50% {
+		transform: translate(calc(50vw - 50%), calc(50vh - 50%)) scale(1.2);
+		opacity: 0.8;
+	}
+	80% {
+		opacity: 0.6;
+	}
+	100% {
+		transform: translate(calc(-50vw + 50%), calc(-50vh + 50%)) scale(0.3);
+		opacity: 0;
+	}
+}
+
+@keyframes energyWaveExpand {
+	0% {
+		transform: translate(-50%, -50%) scale(0.8);
+		opacity: 0.8;
+	}
+	50% {
+		opacity: 0.4;
+	}
+	100% {
+		transform: translate(-50%, -50%) scale(2);
+		opacity: 0;
+	}
+}
+
+@keyframes typingBounce {
+	0%,
+	80%,
+	100% {
+		transform: scale(0);
+	}
+	40% {
+		transform: scale(1);
+	}
+}
+
+@keyframes charAppear {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+.energy-ring:nth-child(1) {
+	--rotation: 0deg;
+}
+
+.energy-ring:nth-child(2) {
+	--rotation: 60deg;
+}
+
+.energy-ring:nth-child(3) {
+	--rotation: 120deg;
 }
