@@ -1,5 +1,6 @@
 'use client'
 
+import clsx from 'clsx'
 import { FC, useEffect, useRef, useState } from 'react'
 import WaveSurfer from 'wavesurfer.js'
 import RecordPlugin from 'wavesurfer.js/dist/plugins/record.esm.js'
@@ -14,31 +15,15 @@ export const MicTab: FC = () => {
 		if (containerRef.current) {
 			waveSurferRef.current = WaveSurfer.create({
 				container: containerRef.current,
-				waveColor: 'gray',
 				interact: false,
-				cursorWidth: 0,
 				plugins: [RecordPlugin.create()],
-				width: '100%',
-				barHeight: 4,
-				barWidth: 2,
-				barGap: 4,
-				barRadius: 50,
 			})
 
 			recordRefPlugin.current =
 				waveSurferRef.current.getActivePlugins()[0] as RecordPlugin
 
-			recordRefPlugin.current?.on('record-end', blob => {
-				const audioUrl = URL.createObjectURL(blob)
-				const audioElement = new Audio(audioUrl)
-				audioElement.controls = true
-				audioElement.autoplay = true
-
-				// Append the audio element to the container
-				if (containerRef.current) {
-					containerRef.current.appendChild(audioElement)
-				}
-			})
+			// Write audio logic
+			recordRefPlugin.current?.on('record-end', blob => {})
 		}
 
 		return () => {
@@ -57,11 +42,12 @@ export const MicTab: FC = () => {
 
 	return (
 		<div className='min-w-96 flex flex-col items-center'>
+			<div ref={containerRef} className='hidden'></div>
 			<div
 				className='sphere-container'
 				onClick={() => setIsRecording(!isRecording)}
 			>
-				<div className='sphere' id='sphere'>
+				<div className={clsx('sphere', { active: isRecording })} id='sphere'>
 					<div className='sphere-core'></div>
 
 					<div className='energy-rings'>
@@ -81,12 +67,14 @@ export const MicTab: FC = () => {
 						<div className='particle'></div>
 					</div>
 
-					<div className='energy-waves'>
-						<div className='energy-wave'></div>
-						<div className='energy-wave'></div>
-						<div className='energy-wave'></div>
-						<div className='energy-wave'></div>
-					</div>
+					{isRecording && (
+						<div className='energy-waves'>
+							<div className='energy-wave'></div>
+							<div className='energy-wave'></div>
+							<div className='energy-wave'></div>
+							<div className='energy-wave'></div>
+						</div>
+					)}
 
 					<div className='voice-waves' id='voiceWaves'>
 						<div className='voice-wave'></div>

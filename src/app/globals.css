@@ -378,10 +378,12 @@
 	position: absolute;
 	top: 50%;
 	left: 50%;
-	transform: translate(-50%, -50%);
 	border: 3px solid rgba(0, 191, 255, 0.8);
 	border-radius: 50%;
-	animation: voiceWaveExpand 1s ease-out infinite;
+	transform: translate(-50%, -50%) scale(0);
+	opacity: 0;
+	/* Smoothly transition between states set by JavaScript */
+	transition: transform 0.2s ease-out, opacity 0.2s ease-out;
 }
 
 .voice-wave:nth-child(1) {
