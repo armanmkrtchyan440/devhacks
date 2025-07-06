@@ -1,12 +1,15 @@
 'use client'
 
-import { useSendVideoToAi } from '@/api'
-import { useWebSocket } from '@/providers/websocket'
 import { CameraOff } from 'lucide-react'
 import { FC, useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '../ui/button'
 
-export const CameraTab: FC = () => {
+interface CameraProps {
+	sendVideo: (file: Blob) => void
+	sendMessage: (message: unknown) => void
+}
+
+export const CameraTab: FC<CameraProps> = ({ sendVideo, sendMessage }) => {
 	const videoRef = useRef<HTMLVideoElement | null>(null)
 	const activeStreamsRef = useRef<MediaStream[]>([])
 	const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -16,8 +19,6 @@ export const CameraTab: FC = () => {
 	const recordingChunksRef = useRef<Blob[]>([])
 	const recordingMediaRecorderRef = useRef<MediaRecorder | null>(null)
 
-	const { sendMessage } = useWebSocket()
-	const { mutate: sendVideo } = useSendVideoToAi()
 	const [isRecording, setIsRecording] = useState<boolean>(false)
 
 	const startFrameSending = useCallback(() => {
@@ -190,7 +191,7 @@ export const CameraTab: FC = () => {
 			</div>
 			<div className='flex justify-center items-center'>
 				<Button onClick={handleToggleRecording}>
-					{isRecording ? 'Start' : 'Stop'} Recording
+					{isRecording ? 'Stop' : 'Start'} Recording
 				</Button>
 			</div>
 		</div>
