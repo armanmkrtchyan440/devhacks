@@ -1,15 +1,30 @@
 'use client'
 
 import { CameraOff } from 'lucide-react'
-import { FC, useCallback, useEffect, useRef, useState } from 'react'
+import {
+	Dispatch,
+	FC,
+	SetStateAction,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from 'react'
 import { Button } from '../ui/button'
 
 interface CameraProps {
 	sendVideo: (file: Blob) => void
 	sendMessage: (message: unknown) => void
+	isRecording: boolean
+	setIsRecording: Dispatch<SetStateAction<boolean>>
 }
 
-export const CameraTab: FC<CameraProps> = ({ sendVideo, sendMessage }) => {
+export const CameraTab: FC<CameraProps> = ({
+	sendVideo,
+	sendMessage,
+	isRecording,
+	setIsRecording,
+}) => {
 	const videoRef = useRef<HTMLVideoElement | null>(null)
 	const activeStreamsRef = useRef<MediaStream[]>([])
 	const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -18,8 +33,6 @@ export const CameraTab: FC<CameraProps> = ({ sendVideo, sendMessage }) => {
 	const combinedStreamRef = useRef<MediaStream | null>(null)
 	const recordingChunksRef = useRef<Blob[]>([])
 	const recordingMediaRecorderRef = useRef<MediaRecorder | null>(null)
-
-	const [isRecording, setIsRecording] = useState<boolean>(false)
 
 	const startFrameSending = useCallback(() => {
 		intervalRef.current = setInterval(() => {
