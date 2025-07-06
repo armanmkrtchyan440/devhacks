@@ -145,19 +145,37 @@ export default function Home() {
 	const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
 	const { mutate: sendVideo, data } = useSendMediaToAi()
 	const { sendMessage, onMessage } = useWebSocket()
+	const [isRecording, setIsRecording] = useState(false)
 
 	const renderTabContent = useCallback(() => {
 		switch (tab) {
 			case 'camera':
-				return <CameraTab sendMessage={sendMessage} sendVideo={sendVideo} />
+				return (
+					<CameraTab
+						sendMessage={sendMessage}
+						sendVideo={sendVideo}
+						isRecording={isRecording}
+						setIsRecording={setIsRecording}
+					/>
+				)
 			case 'microphone':
 				return <MicTab />
 			default:
-				return <CameraTab sendMessage={sendMessage} sendVideo={sendVideo} />
+				return (
+					<CameraTab
+						sendMessage={sendMessage}
+						sendVideo={sendVideo}
+						isRecording={isRecording}
+						setIsRecording={setIsRecording}
+					/>
+				)
 		}
-	}, [tab])
+	}, [isRecording, sendMessage, sendVideo, tab])
 
 	useEffect(() => {
+		if (!isRecording) {
+			return
+		}
 		const interval = setInterval(() => {
 			setFeelings(prev =>
 				prev.map(item => {
@@ -173,7 +191,7 @@ export default function Home() {
 		return () => {
 			clearInterval(interval)
 		}
-	}, [])
+	}, [isRecording])
 
 	return (
 		<WebSocketProvider url={process.env.NEXT_PUBLIC_WEBSOCKET_URL || ''}>
