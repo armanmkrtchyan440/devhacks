@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 import { CameraTab } from '@/components/ai/camera-tab'
 import { MicTab } from '@/components/ai/mic-tab'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import {
 	Dialog,
@@ -18,11 +18,12 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DialogTrigger,
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { WebSocketProvider } from '@/providers/websocket'
+import { useWebSocket, WebSocketProvider } from '@/providers/websocket'
 import { clsx } from 'clsx'
+import { useSendMediaToAi } from '@/api'
+import { randomInteger } from '@/lib/utils'
 
 type TabName = 'camera' | 'microphone'
 
@@ -31,11 +32,22 @@ interface TextProps {
 	percent: number
 }
 
-// FeelingItem component with hover animations and effects
+const feelingColors: Record<string, string> = {
+	Neutral: '#9CA3AF',
+	Stress: '#F59E0B',
+	Anxiety: '#EF4444',
+	Relaxation: '#6EE7B7',
+	Sadness: '#3B82F6',
+	Happiness: '#FBBF24',
+	Euphoria: '#A855F7',
+	Depression: '#4B5563',
+	Anger: '#DC2626',
+	Scared: '#F472B6',
+}
+
 const FeelingItem: FC<TextProps> = ({ feeling, percent }) => {
 	const [loadingPercent, setLoadingPercent] = useState(0)
 
-	// Animation for loading percentage from 0 to actual value
 	useEffect(() => {
 		const interval = setInterval(() => {
 			setLoadingPercent(prev => {
@@ -43,34 +55,29 @@ const FeelingItem: FC<TextProps> = ({ feeling, percent }) => {
 				if (next === percent) clearInterval(interval)
 				return next
 			})
-		}, 5) // Adjust the speed of the animation here (lower is faster)
-		return () => clearInterval(interval) // Cleanup interval when unmounted
+		}, 5)
+		return () => clearInterval(interval)
 	}, [percent])
 
-	// Helper function to get the color of each feeling based on percentage
-	const getFeelingColor = (percent: number) => {
-		if (percent < 30) return '#e74c3c';  // Stress (Red)
-		if (percent < 50) return '#f39c12';  // Anxiety (Yellow)
-		if (percent < 70) return '#f39c12';  // Relaxation (Yellow)
-		if (percent < 90) return '#2ecc71';  // Happiness (Green)
-		return '#1abc9c';  // Euphoria (Teal)
+	const getFeelingColor = (feeling: string) => {
+		return feelingColors[feeling]
 	}
 
 	return (
 		<motion.div
-			className="w-[90%] m-auto mb-[20px] p-[15px] rounded-xl shadow-lg"
+			className='w-full m-auto p-[15px] rounded-xl shadow-lg'
 			initial={{ opacity: 0 }}
 			animate={{ opacity: 1 }}
 			exit={{ opacity: 0 }}
 			transition={{ duration: 1 }}
 			style={{
 				boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-				border: '1px solid rgba(255, 255, 255, 0.3)'
+				border: '1px solid rgba(255, 255, 255, 0.3)',
 			}}
 			whileHover={{
-				scale: 1.05, // Scale the item slightly when hovered
-				boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)', // Increase shadow on hover
-				transition: { type: 'spring', stiffness: 300, damping: 20 }
+				scale: 1.05,
+				boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
+				transition: { type: 'spring', stiffness: 300, damping: 20 },
 			}}
 		>
 			<div className='w-full flex justify-between items-center text-white font-medium text-lg'>
@@ -82,68 +89,91 @@ const FeelingItem: FC<TextProps> = ({ feeling, percent }) => {
 					className='h-full'
 					style={{
 						width: `${loadingPercent}%`,
-						backgroundColor: getFeelingColor(loadingPercent),
+						backgroundColor: getFeelingColor(feeling),
 						borderRadius: '50px',
 					}}
 					animate={{ width: `${loadingPercent}%` }}
-					transition={{ duration: 2, ease: 'easeInOut' }}
+					transition={{ duration: 0.8, ease: 'easeInOut' }}
 				></motion.div>
 			</div>
 		</motion.div>
 	)
 }
 
-// Updated FeelingContainer with no background
-function FeelingContainer() {
-	const feelings = [
-		'Neutral',
-		'Stress',
-		'Anxiety',
-		'Relaxation',
-		'Sadness',
-		'Happiness',
-		'Euphoria',
-		'Depression',
-		'Anger',
-		'Scared'
-	]
+interface FeelingContainerProps {
+	feelings: { name: string; percent: number }[]
+}
 
+const FeelingContainer: FC<FeelingContainerProps> = ({ feelings }) => {
 	return (
-		<ScrollArea className='h-[100%] overflow-auto'>
+		<div className='grid grid-cols-2 gap-4'>
 			{feelings.map((feeling, index) => (
 				<FeelingItem
 					key={index}
-					feeling={feeling}
-					percent={Math.min((index + 1) * 10, 100)} // Ensures max percent 100%
+					feeling={feeling.name}
+					percent={feeling.percent} // Ensures max percent 100%
 				/>
 			))}
-		</ScrollArea>
+		</div>
 	)
 }
 
 export default function Home() {
+	const router = useRouter()
 	const searchParams = useSearchParams()
 	const [tab, setTab] = useState<TabName>(
 		(searchParams.get('tab') as TabName) || 'camera'
 	)
 	const { setItem, getItem } = useLocalStorage<string>('isFirstStart')
+	const [feelings, setFeelings] = useState([
+		{ name: 'Neutral', percent: 0 },
+		{ name: 'Stress', percent: 0 },
+		{ name: 'Anxiety', percent: 0 },
+		{ name: 'Relaxation', percent: 0 },
+		{ name: 'Sadness', percent: 0 },
+		{ name: 'Happiness', percent: 0 },
+		{ name: 'Euphoria', percent: 0 },
+		{ name: 'Depression', percent: 0 },
+		{ name: 'Anger', percent: 0 },
+		{ name: 'Scared', percent: 0 },
+	])
 
 	if (getItem() === undefined) {
 		setItem('true')
 	}
 
 	const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
+	const { mutate: sendVideo, data } = useSendMediaToAi()
+	const { sendMessage, onMessage } = useWebSocket()
 
 	const renderTabContent = useCallback(() => {
 		switch (tab) {
 			case 'camera':
-				return <CameraTab />
+				return <CameraTab sendMessage={sendMessage} sendVideo={sendVideo} />
 			case 'microphone':
 				return <MicTab />
 			default:
-				return <CameraTab />
+				return <CameraTab sendMessage={sendMessage} sendVideo={sendVideo} />
 		}
 	}, [tab])
+
+	useEffect(() => {
+		const interval = setInterval(() => {
+			setFeelings(prev =>
+				prev.map(item => {
+					const percent = randomInteger(0, 100)
+					return {
+						...item,
+						percent,
+					}
+				})
+			)
+		}, 1000)
+
+		return () => {
+			clearInterval(interval)
+		}
+	}, [])
 
 	return (
 		<WebSocketProvider url={process.env.NEXT_PUBLIC_WEBSOCKET_URL || ''}>
@@ -163,7 +193,10 @@ export default function Home() {
 							defaultValue='camera'
 							className='flex flex-col justify-between items-center w-full'
 							value={tab}
-							onValueChange={value => setTab(value as TabName)}
+							onValueChange={value => {
+								setTab(value as TabName)
+								router.replace(`?tab=${value}`, { scroll: false })
+							}}
 						>
 							<div className='w-full'>
 								<Button variant={'default'} asChild className='w-fit h-fit'>
@@ -196,9 +229,11 @@ export default function Home() {
 					{/* Right Side - Psychological Behaviour Analysis */}
 					{tab === 'camera' && (
 						<div className='w-1/2 flex justify-center items-center h-full'>
-							<div className='w-[90%] max-w-[600px] p-[20px] bg-gradient-to-r rounded-[20px] shadow-lg border border-gray-500'>
-								<FeelingContainer />
-							</div>
+							<ScrollArea className='w-full max-h-full overflow-auto'>
+								<div className='mx-auto w-full max-w-[600px] p-[20px] bg-gradient-to-r rounded-[20px] border border-gray-500'>
+									<FeelingContainer feelings={feelings} />
+								</div>
+							</ScrollArea>
 						</div>
 					)}
 				</div>
@@ -212,10 +247,7 @@ export default function Home() {
 							</DialogDescription>
 						</DialogHeader>
 						<DialogFooter>
-							<Button
-								variant='secondary'
-								onClick={() => setIsModalOpen(false)}
-							>
+							<Button variant='secondary' onClick={() => setIsModalOpen(false)}>
 								Cancel
 							</Button>
 							<Button
